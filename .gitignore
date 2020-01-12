@@ -1,0 +1,21 @@
+
+.DS_Store
+.idea
+*.log
+tmp/
+
+# teacher stuff
+problem_ideas/
+setup.org
+inbox.org
+orgopts.org
+# maybe *.org?
+README.org
+.gitmodules
+# hope this won't casue problems :P
+
+# temp (in progress)
+seminars/
+homework/
+!homework/README.md
+Makefile
