@@ -22,20 +22,20 @@ source $static_dir/assn-info.sh
 
 terminal=kitty
 function main() {
-    load
-    create_status_files
-    open_cp
-    unzip_all
-    clean_all
-    init
-    check_all
+    # load
+    # create_status_files
+    # open_cp
+    # unzip_all
+    # clean_all
+    # init
+    # check_all
     evaluate_all
 }
 function getSubmissionZips() {
-    ls -1v $zip_location/*.zip
+    /bin/ls -1v $zip_location/
 }
 
-submissions=($(getSubmissionZips | xargs -I {} basename {} .zip))
+submissions=($(getSubmissionZips | xargs -I {} basename {} .zip | xargs -I {} basename {} .rar))
 echo $submissions
 function move() {
     log basename $(pwd): moving files from $1
@@ -58,7 +58,7 @@ function clean() {
                 then
                     # new scenarios would be nested here
                     # or just use find, jfc
-                    log $submission: no solution found
+                    log "$submission: no solution found"
                     log $(ls -1v)
                 else
                     move $submission
@@ -76,6 +76,7 @@ function clean_all() {
     do
         cd $submissiondir/$submission
         # poor logic for checking correct directory structure
+        pwd
         file=$(ls $main_file)
         if [ ! -f "$file" ]
         then
@@ -95,7 +96,7 @@ function clean_all() {
 
 function log() {
     msg="$1"
-    echo "\t\t\t$msg" | tee $current_status
+    printf "\t\t\t$msg\n" | tee $current_status
     echo $msg >> $logs_file
 }
 
@@ -109,6 +110,7 @@ function unzip_one() {
     fi
     mkdir $output
     unzip -q $zip_location/$submission.zip -d $output
+    unrar x $zip_location/$sumbmission.rar $output
 }
 
 function unzip_all() {
@@ -162,10 +164,14 @@ function initialize() {
     rm -rf assn-1-rsg-data
     cp -r $assignment $checking_dir/$submission
     cd $checking_dir/$submission
-    git init > /dev/null
-    git add . && git commit -m "initial commit" > /dev/null
+    # git init > /dev/null
+    # git add . && git commit -m "initial commit" > /dev/null
     # bin because otherwise it won't overwrite
-    /bin/cp -rf $submissiondir/$submission/* .
+    # /bin/cp -rf $submissiondir/$submission/* .
+    for file in "${edit_files[@]}"
+    do
+        /bin/cp -f $submissiondir/$submission/$file .
+    done
     # cp -r $data . # needed for assignment 1
     make > compile-logs.txt 2> compile-errors.txt && update_status $submission "built" &
 }
@@ -178,7 +184,7 @@ function init() {
     do
         if [ -f $checking_dir/$submission/compile-logs.txt ]
         then
-            log "$submission: already built"
+            log "$submission:\talready built"
         else
             log "building $submission"
             initialize $submission
@@ -194,8 +200,8 @@ function check_all() {
         then
             [[ -f $submission/results.txt ]] && log "$submission: already checked" || check $submission
         else
-            echo "$submission,failed,failed" >> $submission/results_final.txt
-            update_status $submission "failed"
+            echo "$submission,build_failed" > $submission/results_final.txt
+            update_status $submission "build_failed"
         fi
     done
 }
@@ -235,7 +241,7 @@ function create_status_files() {
 function update_status() {
     submission=$1
     message=$2
-    msg="$submission: $message"
+    msg="$submission:\t$message"
     file=$status_dir/$submission
     already_logged=$(grep $message $file)
     if [ -z "$already_logged" ]
